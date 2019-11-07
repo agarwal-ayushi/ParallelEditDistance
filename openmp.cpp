@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   for (j = 0; j < DP_cols; j++) {
     DP[j] = j;
   }
-  #pragma omp parallel for schedule(static) private(i,j)
+
   for (i=1; i < DP_rows; i++) {
     for (j=1; j < DP_cols; j++) {
       DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[i-1] != Y[j-1]) ? 1 : 0)));

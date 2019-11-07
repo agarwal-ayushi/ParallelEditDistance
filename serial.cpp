@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     for (j=1; j < DP_cols; j++) {
       //int val = (X[j] != Y[i]) ? 2 : 0;
       //std::cout << DP[(i-1)*DP_cols+j]+1 << "\t" << DP[i*DP_cols+(j-1)]+1 << "\t" << DP[(i-1)*DP_cols+(j-1)]+((X[i-1] != Y[j-1]) ? 1 : 0) << std::endl;
-      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[i-1] != Y[j-1]) ? 1 : 0)));
+      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[j-1] != Y[i-1]) ? 1 : 0)));
     }
   }
   clock_gettime(CLOCK_MONOTONIC_RAW, &end_serial);
