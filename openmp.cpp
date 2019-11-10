@@ -62,26 +62,23 @@ int main(int argc, char* argv[]) {
   for (j = 0; j < DP_cols; j++) {
     DP[j] = j;
   }
-  #pragma omp parallel firstprivate(DP_rows, DP_cols, DP) private(it)
+  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y) shared(DP) private(it)
   {
+  std::cout << DP_rows << "\t" << DP_cols <<std::endl;
   for (it=1; it < (DP_cols+DP_rows); it++){
     w1 = it < DP_rows ? 0: it-DP_rows;
     w2 = it < DP_cols ? 0: it-DP_cols;
-    #pragma omp for private(k, i, j)
+    //#pragma omp for private(k, i, j)
     for (k=it-w2; k > w1; k--) {
+      //std::cout << omp_get_thread_num() << std::endl;
       i = k;
       j = (it-k)+1;
       if (i >= DP_rows || j >= DP_cols) continue;
       //std::cout << i << "\t" << j << std::endl;
-      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[i-1] != Y[j-1]) ? 1 : 0)));
+      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[j-1] != Y[i-1]) ? 1 : 0)));
     }
   }
-  }
-  // for (i=1; i < DP_rows; i++) {
-  //   for (j=1; j < DP_cols; j++) {
-  //     DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[i-1] != Y[j-1]) ? 1 : 0)));
-  //   }
-  // }
+}
   end = omp_get_wtime();
 	diff_parallel = end - start;
   testResult(X, Y, DP, DP_rows, DP_cols);
