@@ -3,7 +3,6 @@
 #include <math.h>
 #include <iostream>
 #include <omp.h>
-#include <fstream>
 
 void printMatrix(int* matrix, int rows, int cols) {
   for (int i=0; i < rows; i++) {
@@ -46,39 +45,8 @@ void testResult(std::string X, std::string Y, int* DP, int DP_rows, int DP_cols)
   if (flag == -1) printf("ERROR!!!! Please check the code. The serial and parallel DP matrix are not the same.\n");
 }
 int main(int argc, char* argv[]) {
-  std::string X = "";
-  std::string Y = "";
-
-  std::ifstream ifile1;
-
-  ifile1.open(argv[1]);
-	if(!ifile1)
-	{
-		std::cout<<"Error in opening file..!!";
-		//getch();
-		exit(0);
-	}
-	while(ifile1.eof()==0)
-	{
-        ifile1>>X;
-
-	}
-
-
-  std::ifstream ifile2;
-  ifile2.open(argv[2]);
-	if(!ifile2)
-	{
-		std::cout<<"Error in opening file..!!";
-		//getch();
-		exit(0);
-	}
-	while(ifile2.eof()==0)
-	{
-        ifile2>>Y;
-	}
-
-
+  std::string X = argv[1];
+  std::string Y = argv[2];
   int N = X.length();
   int M = Y.length();
   int DP_rows = M+1; int DP_cols = N+1;
@@ -94,12 +62,16 @@ int main(int argc, char* argv[]) {
   for (j = 0; j < DP_cols; j++) {
     DP[j] = j;
   }
-  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y) shared(DP) private(it)
+  int P=0, tid=0;
+  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y, P) shared(DP) private(it, tid, i, j)
   {
+  P = omp_get_num_threads();
   for (it=1; it < (DP_cols+DP_rows); it++){
-    w1 = it < DP_rows ? 0: it-DP_rows;
-    w2 = it < DP_cols ? 0: it-DP_cols;
-    #pragma omp for private(k, i, j)
+    //#pragma omp for private(k, i, j)
+    tid = omp_get_thread_num();
+    for (j=tid+1; j<=it; j+=P) {
+
+    }
     for (k=it-w2; k > w1; k--) {
       //std::cout << omp_get_thread_num() << std::endl;
       i = k;
@@ -113,8 +85,8 @@ int main(int argc, char* argv[]) {
   end = omp_get_wtime();
 	diff_parallel = end - start;
   testResult(X, Y, DP, DP_rows, DP_cols);
-  //std::cout << X << "\t" << X.length() << std::endl << Y << "\t" << Y.length() << std::endl;
-  //printMatrix(DP, DP_rows, DP_cols);
+  std::cout << X << "\t" << X.length() << std::endl << Y << "\t" << Y.length() << std::endl;
+  printMatrix(DP, DP_rows, DP_cols);
   printf("Parallel Execution Time=%f\n",diff_parallel);
 
   return 0;
