@@ -13,7 +13,7 @@
 using namespace std;
 int pNum=0, pRank=0;
 
-void distributeData(std::string X, std::string Y, std::string &pX, int DP_rows, int DP_cols) {
+void distributeData(std::string X, std::string Y, std::string &pX, int* &DP_proc, int DP_rows, int DP_cols, int &pNumCols) {
   MPI_Status status;
   MPI_Bcast(&DP_cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&DP_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -26,6 +26,7 @@ void distributeData(std::string X, std::string Y, std::string &pX, int DP_rows, 
     pBlockInd[i] = pBlockInd[i-1] + pBlockSize[i-1];
     pBlockSize[i] = BLOCK_SIZE(i, pNum, DP_cols);
   }
+  pNumCols = BLOCK_SIZE(pRank, pNum, DP_cols);
   char* pX_char = new char [pBlockSize[pRank]];
 
   if (pRank == 1) {
@@ -40,7 +41,9 @@ void distributeData(std::string X, std::string Y, std::string &pX, int DP_rows, 
   pX = std::string(pX_char);
   //if (pRank == 0) cout << pX_char[0] << endl;
   //if (pRank == 1) cout << pX_char[0] << endl;
+  DP_proc = new int [DP_rows*pNumCols];
 }
+
 
 void testResult(std::string X, std::string Y, int* DP, int DP_rows, int DP_cols) {
   int i, j;
@@ -71,8 +74,9 @@ int main(int argc, char* argv[]) {
   std::string X = "";
   std::string Y = "";
   std::string pX;
-  int N, M, DP_cols, DP_rows;
-  int* DP, DP_proc;
+  int N, M, DP_cols, DP_rows, pNumCols;
+  int* DP;
+  int* DP_proc;
   MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &pNum);
 	MPI_Comm_rank(MPI_COMM_WORLD, &pRank);
@@ -103,10 +107,10 @@ int main(int argc, char* argv[]) {
     M = Y.length();
     DP_rows = M+1;
     DP_cols = N+1;
-    int* DP = new int [DP_rows*DP_cols];
+    DP = new int [DP_rows*DP_cols];
   }
-  distributeData(X, Y, pX, DP_rows, DP_cols);
-  //if (pRank == 0) cout << pX[0] << endl;
+  distributeData(X, Y, pX, DP_proc, DP_rows, DP_cols, pNumCols);
+  if (pRank == 0) cout << pNumCols << endl;
   //if (pRank == 1) cout << pX[0] << endl;
   //if (pRank==0) cout << pRank << "\t" << N << "\t" << M << endl;
   MPI_Finalize();
