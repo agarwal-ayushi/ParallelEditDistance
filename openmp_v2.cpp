@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   int M = Y.length();
   int DP_rows = M+1; int DP_cols = N+1;
   int* DP = new int [DP_rows*DP_cols];
-  int i,j, it, k, w1, w2;
+  int i,j, iter, k, w1, w2;
   initializeMatrix(DP, DP_rows, DP_cols);
   double start, end, diff_parallel;
   start = omp_get_wtime();
@@ -88,13 +88,13 @@ int main(int argc, char* argv[]) {
     DP[j] = j;
   }
   int P=0, tid=0;
-  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y, P) shared(DP) private(it, tid, i, j)
+  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y, P) shared(DP) private(iter, tid, i, j)
   {
   P = omp_get_num_threads();
-  for (it=1; it < (DP_cols+DP_rows); it++){
+  for (iter=1; iter < (DP_cols+DP_rows); iter++){
     tid = omp_get_thread_num();
-    for (j=tid+1; j<=it; j+=P) {
-      i = it-j+1;
+    for (j=tid+1; j<=iter; j+=P) {
+      i = iter-j+1;
       if (i >= DP_rows || j >= DP_cols) continue;
       DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[j-1] != Y[i-1]) ? 1 : 0)));
     }

@@ -148,28 +148,6 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &pNum);
 	MPI_Comm_rank(MPI_COMM_WORLD, &pRank);
   if (pRank == 0) {
-    std::ifstream ifile1;
-    ifile1.open(argv[1]);
-    if(!ifile1)
-    {
-      std::cout<<"Error in opening file..!!";
-      exit(0);
-    }
-    while(ifile1.eof()==0)
-    {
-          ifile1>>X;
-    }
-    std::ifstream ifile2;
-    ifile2.open(argv[2]);
-    if(!ifile2)
-    {
-      std::cout<<"Error in opening file..!!";
-      exit(0);
-    }
-    while(ifile2.eof()==0)
-    {
-          ifile2>>Y;
-    }
     X = "Hellowerssssajhk";
     Y= "Yellowersssssjib";
     N = X.length();

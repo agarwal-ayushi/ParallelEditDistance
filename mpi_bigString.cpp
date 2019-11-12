@@ -220,8 +220,8 @@ int main(int argc, char* argv[]) {
     {
           ifile2>>Y;
     }
-    X = "Hellower";
-    Y= "Yellow";
+    //X = "Hellower";
+    //Y= "Yellow";
     N = X.length();
     M = Y.length();
     //DP_rows = M+1;
