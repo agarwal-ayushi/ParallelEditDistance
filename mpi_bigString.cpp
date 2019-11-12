@@ -42,15 +42,41 @@ void distributeData(std::string X, std::string &Y, std::string &pX, int* &DP_pro
     pBlockSize[i] = BLOCK_SIZE(i, pNum, N);
   }
   pNumCols = BLOCK_SIZE(pRank, pNum, N);
+  //if (pRank == 1) cout << pNumCols << "\n\n\n";
   char* pX_char = new char [pBlockSize[pRank]];
+
+
   if (pRank == 0) {
     for (int j = 0; j < pNum; j++) {
+      //cout << &X[pBlockInd[j]] << endl;
       MPI_Send(&X[pBlockInd[j]], pBlockSize[j], MPI_CHAR, j, j, MPI_COMM_WORLD);
     }
   }
   MPI_Recv(&pX_char[0], pBlockSize[pRank], MPI_CHAR, 0, pRank, MPI_COMM_WORLD, &status);
+  if (pRank == 1) cout << pX_char[0] << pBlockSize[3]<< endl << endl << endl;
+  if (pRank == 1) {
+    for (int i=0; i < pNum; i++) {
+      cout << pBlockInd[i] << "\t" << pBlockSize[i] << endl;
+    }
+    //cout << Y[499] << "\t" << M << "\t" << N<< endl;
+  }
   pX = std::string(pX_char);
+  //if (pRank == 0) cout << pX[0] << "\t" << pNumCols << endl;
+  //if (pRank == 2) cout << pX_char[0] << "\t" << pNumCols <<endl;
+  if (pRank == 1) {
+    for (int i=0; i < pNum; i++) {
+      cout << pBlockInd[i] << "\t" << pBlockSize[i] << endl;
+    }
+    //cout << Y[499] << "\t" << M << "\t" << N<< endl;
+  }
   DP_proc = new int [(M+1)*(pBlockSize[pRank]+1)];
+  //if (!pRank) DP_proc = new int [(M+1)*pBlockSize[pRank]];
+  if (pRank == 1) {
+    for (int i=0; i < pNum; i++) {
+      cout << pBlockInd[i] << "\t" << pBlockSize[i] << endl;
+    }
+    cout << Y[499] << "\t" << M << "\t" << N<< endl;
+  }
   delete [] pX_char;
 }
 
@@ -60,24 +86,42 @@ void createMatrix(std::string X, std::string &Y, std::string pX, int* DP_proc, i
   MPI_Request *request;
   request = (MPI_Request*)calloc(M, sizeof(MPI_Request));
   pNumCols+=1;
+  if (pRank == 1) cout << pNumCols << "\n\n\n";
   if (pRank == 0) {
     for (i = 0; i < M+1; i++) {
       DP_proc[i*pNumCols] = i;
+      //cout << DP_proc[i*pNumCols] << endl;
     }
   }
   for (j = 0; j < pNumCols ; j++) {
+    //if (pRank) DP_proc[j+1] = j+pBlockInd[pRank];
     DP_proc[j] = j+pBlockInd[pRank];
+    if (pRank == 1) cout << pBlockInd[pRank] << "\t"<<  DP_proc[j] << endl;
   }
+  // if (pRank < pNum -1) {
+  //   //cout << j << "\t" << DP_proc[j] << endl;
+  //   MPI_Send(&DP_proc[j-1], 1, MPI_INT, pRank+1, pRank+1, MPI_COMM_WORLD);
+  // }
+  // if (pRank) {
+  //   MPI_Recv(&DP_proc[0], 1, MPI_INT, pRank-1, pRank, MPI_COMM_WORLD, &status);
+  // }
+
   for (i=1; i < M+1; i++) {
      if (pRank != 0) {
        MPI_Recv(&DP_proc[i*pNumCols+0], 1, MPI_INT, pRank-1, pRank, MPI_COMM_WORLD, &status);
+       //if (pRank == 1) cout <<  pRank << "\t" <<i << "\t" <<  DP_proc[i*pNumCols+0] << endl;
      }
      for (j = 1; j < pNumCols; j++) {
        DP_proc[i*pNumCols+j] = std::min(std::min((DP_proc[(i-1)*pNumCols+j]+1), (DP_proc[i*pNumCols+(j-1)]+1)),(DP_proc[(i-1)*pNumCols+(j-1)]+ ((pX[j-1] != Y[i-1])? 1 : 0)));
+       //if (pRank == 3) cout << i << "\t" << j << "\t" << pX[j-1] << "\t" << Y[i-1] << "\t" << DP_proc[i*pNumCols+j] << endl;
      }
      if (pRank < pNum-1) {
+       //if (pRank == 1) cout << pRank << "\t" << i << "\t" <<  DP_proc[i*pNumCols+(j-1)] << endl;
        MPI_Isend(&DP_proc[i*pNumCols+(j-1)], 1, MPI_INT, pRank+1, pRank+1, MPI_COMM_WORLD, &request[i-1]);
      }
+   }
+   if (pRank == 0) {
+     //printMatrix(DP_proc, 7, pNumCols);
    }
 }
 
@@ -87,6 +131,9 @@ void gatherResult(int* DP_proc, int* DP, int M, int N, int* pBlockInd, int* pBlo
   int* row;
   for (i=1; i < pNum; i++) {
     pBlockInd[i] = pBlockInd[i-1] + pBlockSize[i-1];
+  }
+  for (i=0; i < pNum; i++) {
+    if (pRank == 1) cout << pBlockInd[i] << "\t" << pBlockSize[i] << endl;
   }
   for (i=0; i < M+1; i++) {
     int* newRow = new int [N+1];
@@ -106,9 +153,12 @@ void gatherResult(int* DP_proc, int* DP, int M, int N, int* pBlockInd, int* pBlo
     MPI_Gatherv(row, pBlockSize[pRank], MPI_INT, newRow, pBlockSize, pBlockInd, MPI_INT, 0, MPI_COMM_WORLD);
     for (j=0; j < N+1; j++) {
       if (pRank == 0) DP[i*(N+1)+j] = newRow[j];
+      if (pRank == 0) cout << newRow[j] << "\t";
     }
+    //if (pRank == 0) cout << endl;;
     delete [] row;
   }
+
 }
 void testResult(std::string X, std::string Y, int* DP, int DP_rows, int DP_cols) {
   int i, j;
@@ -140,7 +190,7 @@ int main(int argc, char* argv[]) {
   std::string X = "";
   std::string Y = "";
   std::string pX= "";
-  int N, M, pNumCols;
+  int N, M, DP_cols, DP_rows, pNumCols;
   int* DP;
   int* DP_proc;
   int *pBlockSize, *pBlockInd;
@@ -170,18 +220,24 @@ int main(int argc, char* argv[]) {
     {
           ifile2>>Y;
     }
-    X = "Hellowerssssajhk";
-    Y= "Yellowersssssjib";
+    X = "Hellower";
+    Y= "Yellow";
     N = X.length();
     M = Y.length();
+    //DP_rows = M+1;
+    //DP_cols = N+1;
     DP = new int [(M+1)*(N+1)];
   }
   double start, end, diff_parallel;
   start = MPI_Wtime();
 
   distributeData(X, Y, pX, DP_proc, M, N, pNumCols, pBlockInd, pBlockSize);
+  if (pRank == 1) cout << pNumCols << "\t" << pBlockInd[pRank] << "\n\n\n";
   createMatrix(X, Y, pX, DP_proc, M, N, pNumCols, pBlockInd, pBlockSize);
+  //if (pRank == 1) cout << pX[0] << endl;
+  //if (pRank==0) cout << pRank << "\t" << N << "\t" << M << endl;
   gatherResult(DP_proc, DP, M, N, pBlockInd, pBlockSize, pNumCols);
+  //if (pRank == 0) printMatrix(DP, M+1, N+1);
 
   end = MPI_Wtime();
   if (pRank == 0) testResult(X, Y, DP, M+1, N+1);
