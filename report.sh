@@ -26,6 +26,15 @@ rm -rf results_mpi.txt
   echo "\nOMP_NUM_THREADS =16"
   export OMP_NUM_THREADS=16
   ./ed_openmp openmp/f1.txt openmp/f2.txt
+  echo "\nOMP_NUM_THREADS =20"
+  export OMP_NUM_THREADS=20
+  ./ed_openmp openmp/f1.txt openmp/f2.txt
+  echo "\nOMP_NUM_THREADS =24"
+  export OMP_NUM_THREADS=24
+  ./ed_openmp openmp/f1.txt openmp/f2.txt
+  echo "\nOMP_NUM_THREADS =40"
+  export OMP_NUM_THREADS=40
+  ./ed_openmp openmp/f1.txt openmp/f2.txt
 } > results_openmp.txt
 
 {
@@ -40,4 +49,13 @@ rm -rf results_mpi.txt
 
   echo "\nNP =16"
   mpirun -np 16 ./ed_mpi mpi/f1.txt mpi/f2.txt
+  
+  echo "\nNP =20"
+  mpirun -np 20 ./ed_mpi mpi/f1.txt mpi/f2.txt
+
+  echo "\nNP =24"
+  mpirun -np 24 ./ed_mpi mpi/f1.txt mpi/f2.txt
+
+  echo "\nNP =40"
+  mpirun -np 40 ./ed_mpi mpi/f1.txt mpi/f2.txt
 } > results_mpi.txt
