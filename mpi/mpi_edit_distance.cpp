@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
   double start, end, diff_parallel, average=0.0;
   MPI_Barrier(MPI_COMM_WORLD);
-  for (int i=0; i < 1000; i++) {
+  for (int i=0; i < 100; i++) {
     diff_parallel=0.0;
     start = MPI_Wtime();
     distributeData(X, Y, pX_char, DP_proc, M, N, pNumCols, pBlockInd, pBlockSize);

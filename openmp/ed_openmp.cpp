@@ -45,7 +45,29 @@ void testResult(std::string X, std::string Y, int* DP, int DP_rows, int DP_cols)
   }
   if (flag == -1) printf("ERROR!!!! Please check the code. The serial and parallel DP matrix are not the same.\n");
 }
-
+void editDistanceOpenmp(std::string X, std::string Y, int* DP, int DP_rows, int DP_cols){
+  int i,j, iter;
+  for (i = 0; i < DP_rows; i++) {
+    DP[i*DP_cols] = i;
+  }
+  for (j = 0; j < DP_cols; j++) {
+    DP[j] = j;
+  }
+  int P=0, tid=0;
+  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y, P) shared(DP) private(iter, tid, i, j)
+  {
+  P = omp_get_num_threads();
+  for (iter=1; iter < (DP_cols+DP_rows); iter++){
+    tid = omp_get_thread_num();
+    for (j=tid+1; j<=iter; j+=P) {
+      i = iter-j+1;
+      if (i >= DP_rows || j >= DP_cols) continue;
+      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[j-1] != Y[i-1]) ? 1 : 0)));
+    }
+    #pragma omp barrier
+  }
+}
+}
 int main(int argc, char* argv[]) {
   std::string X = "";
   std::string Y = "";
@@ -76,37 +98,24 @@ int main(int argc, char* argv[]) {
   int M = Y.length();
   int DP_rows = M+1; int DP_cols = N+1;
   int* DP = new int [DP_rows*DP_cols];
-  int i,j, iter, k, w1, w2;
-  initializeMatrix(DP, DP_rows, DP_cols);
-  double start, end, diff_parallel;
-  start = omp_get_wtime();
 
-  for (i = 0; i < DP_rows; i++) {
-    DP[i*DP_cols] = i;
+  initializeMatrix(DP, DP_rows, DP_cols);
+  double start, end, diff_parallel, average=0.0;
+
+  for (int i=0; i < 100; i++) {
+    diff_parallel=0.0;
+    start = omp_get_wtime();
+    editDistanceOpenmp(X, Y, DP, DP_rows, DP_cols);
+    end = omp_get_wtime();
+	  diff_parallel = end - start;
+    average += diff_parallel;
   }
-  for (j = 0; j < DP_cols; j++) {
-    DP[j] = j;
-  }
-  int P=0, tid=0;
-  #pragma omp parallel firstprivate(DP_rows, DP_cols, X, Y, P) shared(DP) private(iter, tid, i, j)
-  {
-  P = omp_get_num_threads();
-  for (iter=1; iter < (DP_cols+DP_rows); iter++){
-    tid = omp_get_thread_num();
-    for (j=tid+1; j<=iter; j+=P) {
-      i = iter-j+1;
-      if (i >= DP_rows || j >= DP_cols) continue;
-      DP[i*DP_cols+j] = std::min(std::min((DP[(i-1)*DP_cols+j]+1), (DP[i*DP_cols+(j-1)]+1)),(DP[(i-1)*DP_cols+(j-1)]+ ((X[j-1] != Y[i-1]) ? 1 : 0)));
-    }
-    #pragma omp barrier
-  }
-}
-  end = omp_get_wtime();
-	diff_parallel = end - start;
+  average /= 100;
+
   testResult(X, Y, DP, DP_rows, DP_cols);
   //std::cout << X << "\t" << X.length() << std::endl << Y << "\t" << Y.length() << std::endl;
   //printMatrix(DP, DP_rows, DP_cols);
-  printf("Parallel Execution Time=%f\n",diff_parallel);
+  printf("Parallel Execution Time=%f\n",average);
 
   return 0;
 }
